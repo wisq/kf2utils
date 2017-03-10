@@ -18,9 +18,9 @@ EMPTY_TIME = 600
 QUERY_INTERVAL = 10
 
 def nearby_windows
-  current = Time.parse(WINDOW_START)
+  current = WINDOW_TIMEZONE.parse(WINDOW_START)
   [-1, 0, 1].map do |offset|
-    start = current + offset.days
+    start = (current + offset.days).utc
     stop  = start + WINDOW_DURATION
     start..stop
   end
@@ -65,7 +65,7 @@ def server_is_empty(host, port)
 end
 
 def main(host, port = 27015)
-  now = WINDOW_TIMEZONE.now
+  now = Time.now
   window = current_or_next_window(now)
   unless window.include?(now)
     wait = (window.min - now).ceil
