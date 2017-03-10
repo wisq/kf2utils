@@ -2,6 +2,7 @@
 
 require 'bundler/setup'
 require 'socket'
+require 'active_support/values/time_zone'
 require 'active_support/core_ext/time'
 require 'active_support/core_ext/numeric/time'
 
@@ -9,6 +10,7 @@ UDP_RECV_TIMEOUT = 3
 
 WINDOW_START = '01:00' # 1am
 WINDOW_DURATION = 4.hours
+WINDOW_TIMEZONE = ActiveSupport::TimeZone['Eastern Time (US & Canada)']
 MAX_SLEEP = 3600
 STAMP_FILE = 'restart-stamp'
 
@@ -63,7 +65,7 @@ def server_is_empty(host, port)
 end
 
 def main(host, port = 27015)
-  now = Time.now
+  now = WINDOW_TIMEZONE.now
   window = current_or_next_window(now)
   unless window.include?(now)
     wait = (window.min - now).ceil
