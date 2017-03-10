@@ -30,6 +30,10 @@ def current_or_next_window(now = Time.now)
   nearby_windows.find { |w| w.max >= now }
 end
 
+def next_window(now = Time.now)
+  nearby_windows.find { |w| w.min > now }
+end
+
 def sleep_and_exit(sleep_for)
   sleep_for = MAX_SLEEP if sleep_for > MAX_SLEEP
   puts "Sleeping for #{sleep_for} seconds."
@@ -43,6 +47,12 @@ Settings = Struct.new(
   :maximum_players, :number_bots, :dedicated,
   :os, :password, :secure, :game_version,
 )
+
+class Settings
+  def players
+    return "#{number_players} / #{maximum_players}"
+  end
+end
 
 class QueryTimeout < StandardError; end
 
@@ -59,6 +69,9 @@ def query_server(host, port)
 end
 
 def main(host, port = 27015)
+  initial_query = query_server(host, port)
+  puts "Status: #{initial_query.players} players."
+
   now = Time.now
   window = current_or_next_window(now)
   unless window.include?(now)
@@ -87,19 +100,27 @@ def main(host, port = 27015)
     end
   end
 
-  unless query_server(host, port).number_players == 0
+  unless initial_query.number_players == 0
     puts "Server is not empty."
     sleep_and_exit(QUERY_INTERVAL)
   end
 
-  puts "Waiting for server to be empty for #{EMPTY_TIME} seconds."
   target_time = Time.now + EMPTY_TIME
+  unless window.include?(target_time)
+    puts "Not enough time left in window."
+    nxt = next_window(now)
+    wait = (nxt.min - now).ceil
+    puts "Next maintenance window is at #{nxt.min}, in #{wait} seconds."
+    sleep_and_exit(wait)
+  end
+
+  puts "Waiting for server to be empty for #{EMPTY_TIME} seconds."
   until Time.now >= target_time do
     sleep(QUERY_INTERVAL)
 
     query = query_server(host, port)
     remain = (target_time - Time.now).ceil
-    puts "#{query.number_players} / #{query.maximum_players} players, #{remain} seconds remaining."
+    puts "Status: #{query.players} players, #{remain} seconds remaining."
 
     unless query.number_players == 0
       puts "Server is no longer empty."
