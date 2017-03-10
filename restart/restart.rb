@@ -58,12 +58,6 @@ def query_server(host, port)
   return Settings.new(*data)
 end
 
-def server_is_empty(host, port)
-  query = query_server(host, port)
-  puts "Number of players: #{query.number_players} / #{query.maximum_players}"
-  return query.number_players == 0
-end
-
 def main(host, port = 27015)
   now = Time.now
   window = current_or_next_window(now)
@@ -93,18 +87,23 @@ def main(host, port = 27015)
     end
   end
 
-  unless server_is_empty(host, port)
+  unless query_server(host, port).number_players == 0
     puts "Server is not empty."
-    sleep_and_exit(60)
+    sleep_and_exit(QUERY_INTERVAL)
   end
 
   puts "Waiting for server to be empty for #{EMPTY_TIME} seconds."
   target_time = Time.now + EMPTY_TIME
   until Time.now >= target_time do
     sleep(QUERY_INTERVAL)
-    unless server_is_empty(host, port)
+
+    query = query_server(host, port)
+    remain = (target_time - Time.now).ceil
+    puts "#{query.number_players} / #{query.maximum_players} players, #{remain} seconds remaining."
+
+    unless query.number_players == 0
       puts "Server is no longer empty."
-      sleep_and_exit(60)
+      sleep_and_exit(QUERY_INTERVAL)
     end
   end
 
