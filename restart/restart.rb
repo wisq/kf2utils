@@ -6,6 +6,8 @@ require 'active_support/values/time_zone'
 require 'active_support/core_ext/time'
 require 'active_support/core_ext/numeric/time'
 
+$stdout.sync = $stderr.sync = true
+
 UDP_RECV_TIMEOUT = 3
 
 WINDOW_START = '01:00' # 1am
