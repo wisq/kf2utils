@@ -133,6 +133,10 @@ def main(host, port = 27015)
   puts "Proceeding with restart."
   FileUtils.touch(STAMP_FILE)
   system(*%w(sudo sv restart kf2))
+  sleep_and_exit(QUERY_INTERVAL)
+rescue QueryTimeout
+  puts "Server query timed out."
+  sleep_and_exit(QUERY_INTERVAL)
 end
 
 main(*ARGV)
